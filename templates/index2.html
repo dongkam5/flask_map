@@ -48,14 +48,18 @@
             <span onclick="zoomOut()"><img src="https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/ico_minus.png" alt="축소"></span>
         </div>
     </div>
-    <button id="geo_btn" onclick="setCenter()">위치정보 가져오기</button>
+    <button id="geo_btn" onclick="myGeo()">위치정보 가져오기</button>
     <button id="gohome_btn" onclick="panTo()">화명동 이동</button> <br>
-    <!-- <input type="text" id="search" placeholder="검색하려는 가게 명을 입력해주세요."> -->
-    <!-- <button id="search_btn">검색</button> -->
+    <input type="text" id="store_name" placeholder="검색하려는 가게 명을 입력해주세요.">
+    <button id="search_btn" onclick="Search()">검색</button>
+    <p id="warning"></p>
 
 <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=9bb347d4f022c0a35791fc41f6552d25"></script>
 <script>
-let latitude,longitude=[35.235,129.0125];
+let latitude=35.235
+let longitude=129.0125;
+let level=3;
+let warning=document.getElementById('warning');
 var mapContainer = document.getElementById('map'), // 지도의 중심좌표
     mapOption = { 
         center: new kakao.maps.LatLng(35.235,129.0125), // 지도의 중심좌표
@@ -155,22 +159,45 @@ function getSuccess(position) {
 function getError() {
   alert('Geolocation Error');
 }
-navigator.geolocation.getCurrentPosition(getSuccess, getError);
 function setCenter() {            
     // 이동할 위도 경도 위치를 생성합니다 
+    map.setLevel(1);
     var moveLatLon = new kakao.maps.LatLng(latitude, longitude);
-    
     // 지도 중심을 이동 시킵니다
     map.setCenter(moveLatLon);
 }
 function panTo() {
     // 이동할 위도 경도 위치를 생성합니다 
     var moveLatLon = new kakao.maps.LatLng(35.235,129.0125);
-    
+    map.setLevel(3);
     // 지도 중심을 부드럽게 이동시킵니다
     // 만약 이동할 거리가 지도 화면보다 크면 부드러운 효과 없이 이동합니다
     map.panTo(moveLatLon);            
-}        
+}
+function myGeo(){
+    navigator.geolocation.getCurrentPosition(getSuccess, getError);
+    setCenter();
+}
+function Search(){
+    let store_name=document.getElementById('store_name').value;
+    let check=0
+    for (var store of stores){
+    name=store[0];
+    if (name.includes(store_name)){
+        check=1
+        console.log(name);
+        latitude=store[2];
+        longitude=store[3];
+        break
+    }}
+    if (check===0){
+        warning.innerText="가게명이 존재하지 않습니다.";
+    }
+    else{
+        warning.innerHTML="";
+        setCenter();
+    }
+}
 </script>
 </body>
 </html>
