@@ -5,7 +5,7 @@
     <title>동백지도</title>
     <style>
         html, body {width:100%;height:100%;margin:0;padding:0;} 
-.map_wrap {position:relative;overflow:hidden;width:100%;height:350px;}
+.map_wrap {position:relative;overflow:hidden;width:100%;height:600px;}
 .radius_border{border:1px solid #919191;border-radius:5px;}     
 .custom_typecontrol {position:absolute;top:10px;right:10px;overflow:hidden;width:130px;height:30px;margin:0;padding:0;z-index:1;font-size:12px;font-family:'Malgun Gothic', '맑은 고딕', sans-serif;}
 .custom_typecontrol span {display:block;width:65px;height:30px;float:left;text-align:center;line-height:30px;cursor:pointer;}
@@ -48,20 +48,26 @@
             <span onclick="zoomOut()"><img src="https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/ico_minus.png" alt="축소"></span>
         </div>
     </div>
-
+    <button id="geo_btn" onclick="myGeo()">위치정보 가져오기</button>
+    <button id="gohome_btn" onclick="panTo()">화명동 이동</button> <br>
+    <input type="text" id="store_name" placeholder="검색하려는 가게 명을 입력해주세요.">
+    <button id="search_btn" onclick="Search()">검색</button>
+    <p id="warning"></p>
 
 <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=9bb347d4f022c0a35791fc41f6552d25"></script>
 <script>
-    var stores={{stores|tojson}};
+let latitude=35.235
+let longitude=129.0125;
+let level=3;
+let warning=document.getElementById('warning');
 var mapContainer = document.getElementById('map'), // 지도의 중심좌표
     mapOption = { 
-        center: new kakao.maps.LatLng(35.15764967005048, 129.05912240855056), // 지도의 중심좌표
+        center: new kakao.maps.LatLng(35.235,129.0125), // 지도의 중심좌표
         level: 3 // 지도의 확대 레벨
     }; 
 
-var map = new kakao.maps.Map(mapContainer, mapOption); // 지도를 생성합니다
-
-markers=[]
+let map = new kakao.maps.Map(mapContainer, mapOption); // 지도를 생성합니다
+var stores={{stores|tojson}};
 // 지도에 마커를 표시합니다 
 for (var store of stores){
     name=store[0]
@@ -76,7 +82,8 @@ var marker = new kakao.maps.Marker({
 // 커스텀 오버레이에 표시할 컨텐츠 입니다
 // 커스텀 오버레이는 아래와 같이 사용자가 자유롭게 컨텐츠를 구성하고 이벤트를 제어할 수 있기 때문에
 // 별도의 이벤트 메소드를 제공하지 않습니다 
-var content = '<div class="wrap">' + 
+var content = 
+'<div ">' + 
             '    <div class="info">' + 
             '        <div class="title">' + 
             `${name}` + 
@@ -88,7 +95,6 @@ var content = '<div class="wrap">' +
             '           </div>' + 
             '            <div class="desc">' + 
             `                <div class="ellipsis">${address}</div>` +  
-            '                <div><a href="https://www.kakaocorp.com/main" target="_blank" class="link">홈페이지</a></div>' + 
             '            </div>' + 
             '        </div>' + 
             '    </div>' +    
@@ -96,26 +102,27 @@ var content = '<div class="wrap">' +
 
 // 마커 위에 커스텀오버레이를 표시합니다
 // 마커를 중심으로 커스텀 오버레이를 표시하기위해 CSS를 이용해 위치를 설정했습니다
-var overlay = new kakao.maps.CustomOverlay({
-    content: content,
-    map: map,
-    position: marker.getPosition()
-});
-kakao.maps.event.addListener(marker, 'click', storeClick(marker,overlay));
-kakao.maps.event.addListener(marker, 'click', closeOverlay(marker,overlay));
+var infowindow = new kakao.maps.InfoWindow({
+        content: content // 인포윈도우에 표시할 내용
+    });
+// 마커에 mouseover 이벤트와 mouseout 이벤트를 등록합니다
+// 이벤트 리스너로는 클로저를 만들어 등록합니다 
+// for문에서 클로저를 만들어 주지 않으면 마지막 마커에만 이벤트가 등록됩니다
+kakao.maps.event.addListener(marker, 'mouseover', makeOverListener(map, marker, infowindow));
+kakao.maps.event.addListener(marker, 'mouseout', makeOutListener(infowindow));
 }
 // 마커를 클릭했을 때 커스텀 오버레이를 표시합니다
-function storeClick(marker,overlay){
-    return function(){
-    overlay.setMap(map);}
-};
+function makeOverListener(map, marker, infowindow) {
+    return function() {
+        infowindow.open(map, marker);
+    };
+}
 
-// 커스텀 오버레이를 닫기 위해 호출되는 함수입니다 
-function closeOverlay(marker,overlay) {
-    return function()
-    {
-    overlay.setMap(null);    
-    } 
+// 인포윈도우를 닫는 클로저를 만드는 함수입니다 
+function makeOutListener(infowindow) {
+    return function() {
+        infowindow.close();
+    };
 }
 
 function setMapType(maptype) { 
@@ -142,6 +149,55 @@ function zoomOut() {
     map.setLevel(map.getLevel() + 1);
 }
 
+        // 가져오기 성공
+function getSuccess(position) {
+    latitude = position.coords.latitude;
+    longitude = position.coords.longitude;
+}
+
+// 가지오기 실패(거부)
+function getError() {
+  alert('Geolocation Error');
+}
+function setCenter() {            
+    // 이동할 위도 경도 위치를 생성합니다 
+    map.setLevel(1);
+    var moveLatLon = new kakao.maps.LatLng(latitude, longitude);
+    // 지도 중심을 이동 시킵니다
+    map.setCenter(moveLatLon);
+}
+function panTo() {
+    // 이동할 위도 경도 위치를 생성합니다 
+    var moveLatLon = new kakao.maps.LatLng(35.235,129.0125);
+    map.setLevel(3);
+    // 지도 중심을 부드럽게 이동시킵니다
+    // 만약 이동할 거리가 지도 화면보다 크면 부드러운 효과 없이 이동합니다
+    map.panTo(moveLatLon);            
+}
+function myGeo(){
+    navigator.geolocation.getCurrentPosition(getSuccess, getError);
+    setCenter();
+}
+function Search(){
+    let store_name=document.getElementById('store_name').value;
+    let check=0
+    for (var store of stores){
+    name=store[0];
+    if (name.includes(store_name)){
+        check=1
+        console.log(name);
+        latitude=store[2];
+        longitude=store[3];
+        break
+    }}
+    if (check===0){
+        warning.innerText="가게명이 존재하지 않습니다.";
+    }
+    else{
+        warning.innerHTML="";
+        setCenter();
+    }
+}
 </script>
 </body>
 </html>

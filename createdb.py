@@ -69,7 +69,7 @@ item_list=item.values.tolist()
 stores=[]
 for item in item_list:
     if "화명" in item[1]:
-        stores.append(item)
+        stores.append(item) 
 if not(check_table()):
     delete_table()
     create_table()

@@ -23,7 +23,7 @@ def select_all():
 def index():
     stores=select_all()
     # print(stores)
-    return render_template('index2.html',stores=stores)
+    return render_template('index.html',stores=stores)
 
 if __name__=='__main__':
     app.run(debug=True)
