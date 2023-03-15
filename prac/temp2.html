@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        
+    </head>
+    <body>
+        <script>
+    navigator.geolocation.getCurrentPosition(getSuccess,getError);
+    function getSuccess(position) {
+    const lat = position.coords.latitude;
+    const lng = position.coords.longitude;
+    return (lat,lng)
+}
+// 가지오기 실패(거부)
+function getError() {
+  alert('Geolocation Error');
+}
+        </script>
+    </body>
+</html>

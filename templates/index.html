@@ -4,6 +4,20 @@
     <meta charset="utf-8">
     <title>동백지도</title>
     <style>
+        html, body {width:100%;height:100%;margin:0;padding:0;} 
+.map_wrap {position:relative;overflow:hidden;width:100%;height:350px;}
+.radius_border{border:1px solid #919191;border-radius:5px;}     
+.custom_typecontrol {position:absolute;top:10px;right:10px;overflow:hidden;width:130px;height:30px;margin:0;padding:0;z-index:1;font-size:12px;font-family:'Malgun Gothic', '맑은 고딕', sans-serif;}
+.custom_typecontrol span {display:block;width:65px;height:30px;float:left;text-align:center;line-height:30px;cursor:pointer;}
+.custom_typecontrol .btn {background:#fff;background:linear-gradient(#fff,  #e6e6e6);}       
+.custom_typecontrol .btn:hover {background:#f5f5f5;background:linear-gradient(#f5f5f5,#e3e3e3);}
+.custom_typecontrol .btn:active {background:#e6e6e6;background:linear-gradient(#e6e6e6, #fff);}    
+.custom_typecontrol .selected_btn {color:#fff;background:#425470;background:linear-gradient(#425470, #5b6d8a);}
+.custom_typecontrol .selected_btn:hover {color:#fff;}   
+.custom_zoomcontrol {position:absolute;top:50px;right:10px;width:36px;height:80px;overflow:hidden;z-index:1;background-color:#f5f5f5;} 
+.custom_zoomcontrol span {display:block;width:36px;height:40px;text-align:center;cursor:pointer;}     
+.custom_zoomcontrol span img {width:15px;height:15px;padding:12px 0;border:none;}             
+.custom_zoomcontrol span:first-child{border-bottom:1px solid #bfbfbf;}            
     .wrap {position: absolute;left: 0;bottom: 40px;width: 288px;height: 132px;margin-left: -144px;text-align: left;overflow: hidden;font-size: 12px;font-family: 'Malgun Gothic', dotum, '돋움', sans-serif;line-height: 1.5;}
     .wrap * {padding: 0;margin: 0;}
     .wrap .info {width: 286px;height: 120px;border-radius: 5px;border-bottom: 2px solid #ccc;border-right: 1px solid #ccc;overflow: hidden;background: #fff;}
@@ -21,10 +35,24 @@
 </style>
 </head>
 <body>
-<div id="map" style="width:100%;height:350px;"></div>
+    <div class="map_wrap">
+        <div id="map" style="width:100%;height:100%;position:relative;overflow:hidden;"></div> 
+        <!-- 지도타입 컨트롤 div 입니다 -->
+        <div class="custom_typecontrol radius_border">
+            <span id="btnRoadmap" class="selected_btn" onclick="setMapType('roadmap')">지도</span>
+            <span id="btnSkyview" class="btn" onclick="setMapType('skyview')">스카이뷰</span>
+        </div>
+        <!-- 지도 확대, 축소 컨트롤 div 입니다 -->
+        <div class="custom_zoomcontrol radius_border"> 
+            <span onclick="zoomIn()"><img src="https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/ico_plus.png" alt="확대"></span>  
+            <span onclick="zoomOut()"><img src="https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/ico_minus.png" alt="축소"></span>
+        </div>
+    </div>
+
 
 <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=9bb347d4f022c0a35791fc41f6552d25"></script>
 <script>
+    var stores={{stores|tojson}};
 var mapContainer = document.getElementById('map'), // 지도의 중심좌표
     mapOption = { 
         center: new kakao.maps.LatLng(35.15764967005048, 129.05912240855056), // 지도의 중심좌표
@@ -33,10 +61,16 @@ var mapContainer = document.getElementById('map'), // 지도의 중심좌표
 
 var map = new kakao.maps.Map(mapContainer, mapOption); // 지도를 생성합니다
 
+markers=[]
 // 지도에 마커를 표시합니다 
+for (var store of stores){
+    name=store[0]
+    address=store[1]
+    lat=store[2]
+    lng=store[3]
 var marker = new kakao.maps.Marker({
     map: map, 
-    position: new kakao.maps.LatLng(35.15764967005048, 129.05912240855056)
+    position: new kakao.maps.LatLng(lat, lng)
 });
 
 // 커스텀 오버레이에 표시할 컨텐츠 입니다
@@ -45,16 +79,15 @@ var marker = new kakao.maps.Marker({
 var content = '<div class="wrap">' + 
             '    <div class="info">' + 
             '        <div class="title">' + 
-            '            카카오 스페이스닷원' + 
-            '            <div class="close" onclick="closeOverlay()" title="닫기"></div>' + 
+            `${name}` + 
+            '            <div title="닫기"></div>' + 
             '        </div>' + 
             '        <div class="body">' + 
             '            <div class="img">' +
-            '                <img src="https://cfile181.uf.daum.net/image/250649365602043421936D" width="73" height="70">' +
+            '                <img src="data:image/png;base64,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" width="73" height="70">' +
             '           </div>' + 
             '            <div class="desc">' + 
-            '                <div class="ellipsis">제주특별자치도 제주시 첨단로 242</div>' + 
-            '                <div class="jibun ellipsis">(우) 63309 (지번) 영평동 2181</div>' + 
+            `                <div class="ellipsis">${address}</div>` +  
             '                <div><a href="https://www.kakaocorp.com/main" target="_blank" class="link">홈페이지</a></div>' + 
             '            </div>' + 
             '        </div>' + 
@@ -66,18 +99,49 @@ var content = '<div class="wrap">' +
 var overlay = new kakao.maps.CustomOverlay({
     content: content,
     map: map,
-    position: marker.getPosition()       
+    position: marker.getPosition()
 });
-
+kakao.maps.event.addListener(marker, 'click', storeClick(marker,overlay));
+kakao.maps.event.addListener(marker, 'click', closeOverlay(marker,overlay));
+}
 // 마커를 클릭했을 때 커스텀 오버레이를 표시합니다
-kakao.maps.event.addListener(marker, 'click', function() {
-    overlay.setMap(map);
-});
+function storeClick(marker,overlay){
+    return function(){
+    overlay.setMap(map);}
+};
 
 // 커스텀 오버레이를 닫기 위해 호출되는 함수입니다 
-function closeOverlay() {
-    overlay.setMap(null);     
+function closeOverlay(marker,overlay) {
+    return function()
+    {
+    overlay.setMap(null);    
+    } 
 }
+
+function setMapType(maptype) { 
+    var roadmapControl = document.getElementById('btnRoadmap');
+    var skyviewControl = document.getElementById('btnSkyview'); 
+    if (maptype === 'roadmap') {
+        map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);    
+        roadmapControl.className = 'selected_btn';
+        skyviewControl.className = 'btn';
+    } else {
+        map.setMapTypeId(kakao.maps.MapTypeId.HYBRID);    
+        skyviewControl.className = 'selected_btn';
+        roadmapControl.className = 'btn';
+    }
+}
+
+// 지도 확대, 축소 컨트롤에서 확대 버튼을 누르면 호출되어 지도를 확대하는 함수입니다
+function zoomIn() {
+    map.setLevel(map.getLevel() - 1);
+}
+
+// 지도 확대, 축소 컨트롤에서 축소 버튼을 누르면 호출되어 지도를 확대하는 함수입니다
+function zoomOut() {
+    map.setLevel(map.getLevel() + 1);
+}
+
 </script>
 </body>
 </html>

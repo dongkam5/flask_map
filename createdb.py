@@ -63,17 +63,21 @@ def select_all():
         db.close()
         return ret
 
-df = pd.read_csv('test_data.csv', index_col='순번')
+df = pd.read_csv('data.csv', index_col='순번')
 item=df.dropna()
 item_list=item.values.tolist()
+stores=[]
+for item in item_list:
+    if "북구" in item[1]:
+        stores.append(item)
 if not(check_table()):
     delete_table()
     create_table()
-    insert_data(item_list)
+    insert_data(stores)
 else:
     delete_table()
     create_table()
-    insert_data(item_list)
+    insert_data(stores)
 
 all_val=select_all()
 
